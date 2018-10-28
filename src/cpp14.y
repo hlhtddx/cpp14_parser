@@ -1453,3 +1453,15 @@ noexcept_specification:
 
 %%
 
+const char* get_token_name(int token) {
+    static char temp_str[2] = {0};
+    if (token <= 0xff) {
+        temp_str[0] = (char)token;
+        return temp_str;
+    }
+    token -= 0xff;
+    if (token <= sizeof(yytname)/sizeof(yytname[0])) {
+        return yytname[token];
+    }
+    return "Out of bound";
+}
