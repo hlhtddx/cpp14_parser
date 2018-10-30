@@ -1,19 +1,18 @@
 %{
-%}
-
-%{
 
 #include <string>
 
 #define YYDEBUG 1        /* get the pretty debugging code to compile*/
-#include "cpp14_lexer.hpp"
+//#include "cpp14_lexer.hpp"
 
-void yyerror(char* string)
-{
-    printf("parser error: %s\n", string);
-}
+extern int cpp14lex (void);
+
+void yyerror(const char* string);
 
 %}
+
+
+%glr-parser
 
 %union{
     const char* text;
@@ -156,8 +155,7 @@ ud_suffix:                      IDENTIFIER
 
 
 /* Basic concepts       [gram.basic] */
-translation_unit:
-                                | declaration_seq_opt
+translation_unit:               declaration_seq_opt
                                 ;
 
 /* Expressions          [gram.expr] */
@@ -482,8 +480,10 @@ iteration_statement:            WHILE '(' condition ')' statement
                                 ;
 
 for_init_statement:             expression_statement
-                                | simple_declaration for_range_declaration:
-                                | attribute_specifier_seq_opt decl_specifier_seq declarator
+                                | simple_declaration
+                                ;
+
+for_range_declaration:          attribute_specifier_seq_opt decl_specifier_seq declarator
                                 ;
 
 for_range_initializer:          expression
@@ -1259,4 +1259,9 @@ const char* get_token_name(int token) {
         return yytname[token];
     }
     return "Out of bound";
+}
+
+void yyerror(const char* string)
+{
+    printf("parser error: %s\n", string);
 }
