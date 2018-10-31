@@ -11,8 +11,9 @@ void yyerror(const char* string);
 
 %}
 
-
+/*
 %glr-parser
+*/
 
 %union{
     const char* text;
@@ -50,7 +51,7 @@ void yyerror(const char* string);
 %token  L_SHIFT R_SHIFT                         /*    <<      >>                      */
 %token  LE GE EQ NE                             /*    <=      >=      ==      !=      */
 %token  ANDAND OROR                             /*    &&      ||                      */
-%token  ELLIPSIS                                /*    ELLIPSIS                             */
+%token  ELLIPSIS                                /*    ELLIPSIS                        */
 
 %token  CLCL                                    /*    ::                              */
 %token  DOT_STAR ARROW_STAR                     /*    .*       ->*                    */
