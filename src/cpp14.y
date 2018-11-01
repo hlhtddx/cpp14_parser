@@ -11,9 +11,6 @@ void yyerror(const char* string);
 
 %}
 
-
-%glr-parser
-
 %union{
     const char* text;
 }
@@ -231,6 +228,7 @@ init_capture:                   IDENTIFIER initializer
                                 ;
 
 lambda_declarator:              '(' parameter_declaration_clause ')' MUTABLE_opt exception_specification_opt attribute_specifier_seq_opt trailing_return_type_opt
+                                ;
 
 lambda_declarator_opt:
                                 | lambda_declarator
