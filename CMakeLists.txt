@@ -5,8 +5,6 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-<<<<<<< HEAD
-
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(BISON_EXECUTABLE /opt/local/bin/bison)
     set(FLEX_EXECUTABLE /opt/local/bin/flex)
@@ -34,5 +32,7 @@ FLEX_TARGET(
 ADD_FLEX_BISON_DEPENDENCY(CppScanner CppParser)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+add_definitions(-std=c++14)
+add_subdirectory(test)
 
 add_executable(cpp14 ${BISON_CppParser_OUTPUTS} ${FLEX_CppScanner_OUTPUTS} src/main.cpp)
