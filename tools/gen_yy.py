@@ -1,26 +1,133 @@
 import sys
 import re
-import io
 from enum import Enum
 
+import ply.lex as lex
+import ply.yacc as yacc
 
-class RuleReader:
+tokens = (
+    'WORD', 'SWORD', 'ENDL', 'SPACE',
+    'LPAREN', 'RPAREN',
+    'LBRACKET', 'RBRACKET',
+    'LBRACE', 'RBRACE',
+    'COMMA', 'PERIOD', 'SEMI', 'COLON', 'DOLLAR',
+)
+
+
+def t_NEWLINE(t):
+    r'\n+'
+    t.lexer.lineno += t.value.count("\n")
+
+
+t_WORD = r'[A-Za-z_][\w_]*'
+t_SWORD = r'\\[A-Za-z_][\w_]*'
+
+# Delimeters
+t_LBRACKET = r'\['
+t_RBRACKET = r'\]'
+t_LBRACE = r'\{'
+t_RBRACE = r'\}'
+t_SPECIAL= r'\_|\&|\$|\#|@'
+t_OPERATOR = r'[\+\-\=]'
+
+t_COMMA = r','
+t_PERIOD = r'\.'
+t_SEMI = r';'
+t_DOLLAR = r'\$'
+t_COLON = r':'
+
+t_INTEGER = r'[0-9]+'
+t_PUNC = r'\.|\,|\!|\?|\:|\;|\''
+
+class RuleLexer:
     def __init__(self, buffer: str):
-        self.buffer = buffer
-        self.current = 0
-        self.capacity = len(buffer)
+        self._buffer = buffer
+        self._current = 0
+        self._capacity = len(buffer)
 
-    def has_next(self):
-        return self.current < self.capacity - 1
+    @property
+    def is_not_eof(self):
+        return self._current < self._capacity
 
-    def get_next(self):
-        n = self.buffer[self.current]
-        self.current += 1
+    @property
+    def current(self):
+        return self._buffer[self._current]
+
+    @property
+    def step(self):
+        n = self._buffer[self._current]
+        self._current += 1
         return n
 
-    def untake(self):
-        if self.current > 0:
-            self.current -= 1
+    def recall(self):
+        if self._current > 0:
+            self._current -= 1
+
+    def _parse_labeled_token(self):
+        if self.current != '\\':
+            return None
+
+        (token, name) = self._parse_name()
+        if name is None:
+            raise Exception('cannot extract name from label')
+        token_type = Token.NonTerminal
+        if name == 'terminal':
+            token_type = Token.Terminal
+        elif name == 'textnormal':
+            token_type = Token.TextNormal
+        elif name == 'opt':
+            token_type = Token.Optional
+
+        value = None
+        if self.is_not_eof:
+            c = self.step
+            if c == '{':
+                all_char = []
+                while c:
+                    if c == '}':
+                        break
+                    elif c == '':
+                        raise Exception('cannot extract } from label')
+                    else:
+                        all_char.append(c)
+                    c = self.step
+                value = ''.join(all_char)
+            else:
+                self.recall()
+        return token_type, value
+
+    def _parse_name(self):
+        c = self.current
+        if not (('a' <= c <= 'z') or ('A' <= c <= 'Z') or c == '-' or c == '_'):
+            raise Exception(f'Invalid character {c} for name')
+        all_char = [c]
+        while self.is_not_eof:
+            c = self.step
+            if not (('a' <= c <= 'z') or ('A' <= c <= 'Z') or ('0' <= c <= '9') or c == '-' or c == '_'):
+                break
+            all_char.append(c)
+        return Token.TextNormal, ''.join(all_char)
+
+    def _parse_token(self):
+        c = self.current
+        if c == '\\':
+            return self._parse_labeled_token()
+        elif ('a' <= c <= 'z') or ('A' <= c <= 'Z') or c == '-' or c == '_':
+            return self._parse_name
+        elif c.isspace():
+            return self._parse_space()
+        elif c == '\n':
+            return Token.EndOfLine, ''
+        else:
+            raise Exception(f'Unrecognized character \'{c}\'')
+
+    def get_tokens(self):
+        tokens = []
+        while self.is_not_eof:
+            token, value = self._parse_token()
+            print(token, value, file=sys.stderr)
+            tokens.append((token, value))
+
 
 
 class Token(Enum):
@@ -61,67 +168,9 @@ class GrammarParser:
         self.non_term_def_table[self.non_term_def] = []
         return
 
-    def parse_labeled_token(self, stream):
-        token, name = self.parse_name(stream)
-        if name is None:
-            raise Exception('cannot extract name from label')
-        token_type = Token.NonTerminal
-        if name == 'terminal':
-            token_type = Token.Terminal
-        elif name == 'textnormal':
-            token_type = Token.TextNormal
-        elif name == 'opt':
-            token_type = Token.Optional
-
-        value = None
-        if stream.has_next():
-            c = stream.get_next()
-            if c == '{':
-                all_char = []
-                while c:
-                    if c == '}':
-                        break
-                    elif c == '':
-                        raise Exception('cannot extract } from label')
-                    else:
-                        all_char.append(c)
-                    c = stream.get_next()
-                value = ''.join(all_char)
-            else:
-                stream.untake()
-        return token_type, value
-
-    def parse_name(self, stream):
-        c = stream.get_next()
-        if not ((c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or c == '-' or c == '_'):
-            raise Exception(f'Invalid character {c} for name')
-        all_char = [c]
-        while stream.has_next():
-            c = stream.get_next()
-            if not ((c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or c == '-' or c == '_'):
-                break;
-            all_char.append(c)
-        return Token.TextNormal, ''.join(all_char)
-
-    def parse_token(self, stream):
-        c = stream.get_next()
-        if c == '\\':
-            return self.parse_labeled_token(stream)
-        elif (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or c == '-' or c == '_':
-            stream.untake()
-            return self.parse_name(stream)
-        elif c.isspace():
-            return Token.Space, ''
-        elif c == '\n':
-            return Token.EndOfLine, ''
-        else:
-            raise Exception(f'Unrecognized character \'{c}\'')
-
     def parse_rule(self, out_file, match):
-        stream = RuleReader(match)
-        while stream.has_next():
-            token, value = self.parse_token(stream)
-            print(token, value, file=sys.stderr)
+        lexer = RuleLexer(match)
+        tokens = lexer.get_tokens()
 
     pattern_hanlders = (
         (re.compile(re_section_str), parse_section),
