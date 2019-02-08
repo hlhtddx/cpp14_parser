@@ -25,6 +25,9 @@
 
 #define RETURN_VAL(x) cpp14lval.text = cpp14text; return(x);
 
+#ifdef __WIN32
+#define fileno(x) (0)
+#endif
 
 %}
 

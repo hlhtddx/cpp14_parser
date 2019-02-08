@@ -1,17 +1,22 @@
 cmake_minimum_required(VERSION 3.8)
 
-find_package(Boost 1.36.0)
-if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-endif()
-
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(BISON_EXECUTABLE /usr/local/opt/bison/bin/bison)
     set(FLEX_EXECUTABLE /usr/local/opt/flex/bin/flex)
 endif()
 
-find_package(BISON 3.0.0 REQUIRED)
-find_package(FLEX 2.6 REQUIRED)
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(BISON_EXECUTABLE ${MINGW_ROOT}\\msys\\1.0\\bin\\bison.exe)
+    set(FLEX_EXECUTABLE ${MINGW_ROOT}\\msys\\1.0\\bin\\flex.exe)
+endif()
+
+find_package(Boost 1.32.0 REQUIRED)
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
+find_package(BISON 2.4 REQUIRED)
+find_package(FLEX 2.5 REQUIRED)
 
 BISON_TARGET(
         CppParser
