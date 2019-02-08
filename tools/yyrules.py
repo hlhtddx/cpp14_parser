@@ -62,6 +62,7 @@ def cmd_get_rule(commands, params):
             for element in rule:
                 sys.stdout.write(element + ' ')
             print()
+    print('Get rule done.')
     return True
 
 
@@ -153,6 +154,7 @@ def _generate_dot(rules: Rules, params):
 
 def cmd_dot(commands, params):
     _generate_dot(commands.rules, params)
+    print('Generate dot file done.')
     return True
 
 
