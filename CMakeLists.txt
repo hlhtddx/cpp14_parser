@@ -6,8 +6,8 @@ if(Boost_FOUND)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(BISON_EXECUTABLE /opt/local/bin/bison)
-    set(FLEX_EXECUTABLE /opt/local/bin/flex)
+    set(BISON_EXECUTABLE /usr/local/opt/bison/bin/bison)
+    set(FLEX_EXECUTABLE /usr/local/opt/flex/bin/flex)
 endif()
 
 find_package(BISON 3.0.0 REQUIRED)
